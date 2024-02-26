@@ -6,13 +6,18 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct ContentView: View {
     @State var showExchangeInfo = false
     @State var showSelectCurrency = false
     
+    
     @State var LeftField = ""
     @State var RightField = ""
+    
+    @FocusState var leftTyping
+    @FocusState var rightTyping
     
     @State var leftCurrency: Currency = .silverPiece
     @State var rightCurrency: Currency = .goldPiece
@@ -52,12 +57,18 @@ struct ContentView: View {
                                 .foregroundColor(.white)
                             
                         }
+                        .popoverTip(CurrencyTip(),arrowEdge: .bottom)
+                        
                         .padding(.bottom,-5)
                         .onTapGesture {
                                 showSelectCurrency.toggle()
                             }
                         TextField("Amount", text: $LeftField)
                             .textFieldStyle(.roundedBorder)
+                            .focused($leftTyping)
+                            .keyboardType(.decimalPad)
+                            
+                                
                             
                     }
                     //equal sign
@@ -83,11 +94,16 @@ struct ContentView: View {
                         .padding(.bottom,-5)
                         .onTapGesture {
                             showSelectCurrency.toggle()
+                            
                         }
                         //Text Field
                         TextField("Amount", text: $RightField)
                             .textFieldStyle(.roundedBorder)
                             .multilineTextAlignment(.trailing)
+                            .focused($rightTyping)
+                            .keyboardType(.decimalPad)
+                                
+                            
                     }
                     
                 }
@@ -107,6 +123,27 @@ struct ContentView: View {
                             .foregroundColor(.white)
                     }
                     .padding(.trailing)
+                    
+                    
+                    .onChange(of: LeftField) {
+                        if leftTyping{
+                            RightField = leftCurrency.convert(LeftField, to: rightCurrency)
+                        }
+                        }
+                    
+                    .onChange(of: RightField) {
+                        if rightTyping{
+                            LeftField = rightCurrency.convert(RightField, to: leftCurrency)
+                        }
+                        }
+                    .onChange(of: leftCurrency) {
+                        LeftField = rightCurrency.convert(RightField, to: leftCurrency)
+                    }
+                    
+                    .onChange(of: rightCurrency) {
+                        RightField = leftCurrency.convert(LeftField, to: rightCurrency)
+                    }
+                    
                     .sheet(isPresented: $showExchangeInfo){
                         ExchangeInfo()
                     }
@@ -119,7 +156,13 @@ struct ContentView: View {
                 
             }
             
+        } //Z Stack ends here
+        
+        .task {
+            try? Tips.configure()
+            
         }
+        
     }
 }
 
